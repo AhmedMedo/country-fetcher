@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Annotations as OA;
 use Nelmio\ApiDocBundle\Annotation\Model;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('countries')]
 class CountryController extends AbstractController
@@ -104,6 +105,7 @@ class CountryController extends AbstractController
      *     )
      * )
      */
+    #[IsGranted('ROLE_ADMIN')]
     #[Route('/', methods: ['POST'])]
     public function addCountry(Request $request): JsonResponse
     {
@@ -178,6 +180,7 @@ class CountryController extends AbstractController
      * )
      */
     #[Route('/{uuid}', methods: ['PATCH'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function updateCountry(string $uuid, Request $request): JsonResponse
     {
         $country = $this->em->getRepository(Country::class)->findOneBy(['uuid' => $uuid]);
@@ -259,6 +262,7 @@ class CountryController extends AbstractController
      * )
      */
     #[Route('/{uuid}', methods: ['DELETE'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function deleteCountry(string $uuid): JsonResponse
     {
         $country = $this->em->getRepository(Country::class)->findOneBy(['uuid' => $uuid]);

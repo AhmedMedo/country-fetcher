@@ -26,7 +26,11 @@ class CountrySyncService
     public function syncCountries(): void
     {
         $countries = $this->fetcher->fetchCountries();
+        $apiCountryNames = [];
+
         foreach ($countries as $data) {
+            $apiCountryNames[] = $data['name']['common'];
+
             $country = $this->em->getRepository(Country::class)->findOneBy(['cca3' => $data['cca3']]);
             $country =  $country ?? new Country();
             $country->setName($data['name']['common']);
@@ -40,6 +44,13 @@ class CountrySyncService
             $country->setCurrency(array_key_exists('currencies',$data) ? array_values($data['currencies']) : []);
 
             $this->em->persist($country);
+        }
+
+        $existingCountries = $this->em->getRepository(Country::class)->findAll();
+        foreach ($existingCountries as $existingCountry) {
+            if (!in_array($existingCountry->getName(), $apiCountryNames)) {
+                $this->em->remove($existingCountry);
+            }
         }
 
         $this->em->flush();
