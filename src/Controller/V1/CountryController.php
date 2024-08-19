@@ -14,7 +14,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Annotations as OA;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-
+use Knp\Component\Pager\PaginatorInterface;
 #[Route('countries')]
 class CountryController extends AbstractController
 {
@@ -72,11 +72,32 @@ class CountryController extends AbstractController
      * )
      */
     #[Route('/list', methods: ['GET'])]
-    public function getCountries(): JsonResponse
+    public function getCountries(Request $request, PaginatorInterface $paginator): JsonResponse
     {
-        $countries = $this->em->getRepository(Country::class)->findAll();
+        $page = $request->query->getInt('page', 1);
+        $limit = $request->query->getInt('limit', 10);
 
-        return $this->json($countries);
+        $query = $this->em->getRepository(Country::class)->createQueryBuilder('c')
+            ->getQuery();
+
+        $pagination = $paginator->paginate(
+            $query,
+            $page,
+            $limit
+        );
+
+        // Check if the result is empty
+        if (count($pagination) === 0) {
+            return $this->json(['error' => 'No countries found!'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Return paginated results
+        return $this->json([
+            'data' => $pagination->getItems(),
+            'current_page' => $pagination->getCurrentPageNumber(),
+            'total_items' => $pagination->getTotalItemCount(),
+            'items_per_page' => $pagination->getItemNumberPerPage(),
+        ]);
     }
 
     /**
